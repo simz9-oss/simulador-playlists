@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>BTS Playlist Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f3e8ff;
+      color: #4b2c6f;
+      text-align: center;
+      padding: 30px;
+    }
+    h1 {
+      color: #6d28d9;
+    }
+    select {
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px solid #a78bfa;
+      margin: 20px 0;
+      font-size: 16px;
+      background: #ede9fe;
+      color: #4b2c6f;
+    }
+    table {
+      width: 100%;
+      margin-top: 30px;
+      border-collapse: collapse;
+      background: #faf5ff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background: #c4b5fd;
+    }
+    input[type="number"] {
+      width: 60px;
+      padding: 5px;
+      border: 1px solid #a78bfa;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .remove-btn {
+      background: #e879f9;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: white;
+      font-weight: bold;
+    }
+    .remove-btn:hover {
+      background: #d946ef;
+    }
+    .total {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #5b21b6;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎶 BTS Playlist Calculator 🎶</h1>
+
+  <label for="songSelect">Selecciona una canción:</label>
+  <select id="songSelect">
+    <option value="">-- Elige una canción --</option>
+  </select>
+
+  <table id="songTable">
+    <thead>
+      <tr>
+        <th>Canción</th>
+        <th>Álbum</th>
+        <th>Artista</th>
+        <th>Duración (min)</th>
+        <th>Número (1–200)</th>
+        <th>Total</th>
+        <th>Eliminar</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="total" id="totalTime">Total: 0 min</div>
+
+  <script>
+    const songSelect = document.getElementById("songSelect");
+    const tableBody = document.querySelector("#songTable tbody");
+    const totalTimeDisplay = document.getElementById("totalTime");
+
+    // 📌 cargar canciones desde songs.json
+    fetch("songs.json")
+      .then(response => response.json())
+      .then(canciones => {
+        canciones.forEach(song => {
+          const option = document.createElement("option");
+          option.value = JSON.stringify(song);
+          option.textContent = `${song.artista} - ${song.nombre}`;
+          songSelect.appendChild(option);
+        });
+      });
+
+    songSelect.addEventListener("change", () => {
+      if (!songSelect.value) return;
+      const song = JSON.parse(songSelect.value);
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${song.nombre}</td>
+        <td>${song.album}</td>
+        <td>${song.artista}</td>
+        <td>${song.duracion.toFixed(2)}</td>
+        <td><input type="number" min="1" max="200" value="1"></td>
+        <td class="total-cell">0</td>
+        <td><button class="remove-btn">X</button></td>
+      `;
+      tableBody.appendChild(row);
+      updateRow(row);
+
+      row.querySelector("input").addEventListener("input", () => updateRow(row));
+      row.querySelector(".remove-btn").addEventListener("click", () => {
+        row.remove();
+        updateTotal();
+      });
+
+      songSelect.value = "";
+    });
+
+    function updateRow(row) {
+      const duracion = parseFloat(row.cells[3].textContent);
+      const cantidad = parseInt(row.querySelector("input").value) || 0;
+      let totalMin = duracion * cantidad;
+      let horas = Math.floor(totalMin / 60);
+      let minutos = Math.round(totalMin % 60);
+      row.querySelector(".total-cell").textContent = horas > 0 ? `${horas}h ${minutos}m` : `${totalMin.toFixed(2)}m`;
+      updateTotal();
+    }
+
+    function updateTotal() {
+      let total = 0;
+      tableBody.querySelectorAll("tr").forEach(row => {
+        const duracion = parseFloat(row.cells[3].textContent);
+        const cantidad = parseInt(row.querySelector("input").value) || 0;
+        total += duracion * cantidad;
+      });
+      let horas = Math.floor(total / 60);
+      let minutos = Math.round(total % 60);
+      totalTimeDisplay.textContent = horas > 0 ? `Total: ${horas}h ${minutos}m` : `Total: ${total.toFixed(2)}m`;
+    }
+  </script>
+</body>
+</html>
